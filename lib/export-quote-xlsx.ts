@@ -1,5 +1,5 @@
 import * as XLSXModule from "xlsx"
-import { CATEGORIES } from "@/lib/cotizador-data"
+import { Category, CATEGORIES } from "@/lib/cotizador-data"
 
 type XlsxLib = typeof XLSXModule
 
@@ -11,6 +11,7 @@ function getXlsx(): XlsxLib {
 }
 
 export type QuoteExportInput = {
+  categories?: Category[]
   company: string
   date: string
   ocData: string
@@ -37,7 +38,13 @@ function safeFilePart(value: string, fallback: string): string {
 export function downloadQuoteXlsx(data: QuoteExportInput): void {
   const XLSX = getXlsx()
   const wb = XLSX.utils.book_new()
-  const productCategories = CATEGORIES.filter((c) => c.id !== "resumen")
+  const sourceCategories = data.categories || CATEGORIES
+  const productCategories = sourceCategories
+    .filter((c) => c.id !== "resumen")
+    .map((c) => ({
+      ...c,
+      items: c.items.filter((item) => item.active !== false),
+    }))
 
   const header = ["Categoría", "Servicio", "Descripción", "Precio unitario", "Cantidad", "Total"]
   const serviceRows = productCategories.flatMap((cat) =>
