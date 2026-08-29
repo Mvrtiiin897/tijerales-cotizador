@@ -55,6 +55,23 @@ function applyBorders(
   }
 }
 
+// Helper to style background fill on a range of merged or single cells
+function applyFill(
+  worksheet: ExcelJS.Worksheet,
+  startRow: number,
+  endRow: number,
+  startCol: number,
+  endCol: number,
+  fill: ExcelJS.Fill,
+) {
+  for (let r = startRow; r <= endRow; r++) {
+    for (let c = startCol; c <= endCol; c++) {
+      const cell = worksheet.getCell(r, c)
+      cell.fill = fill
+    }
+  }
+}
+
 export async function downloadQuoteXlsx(data: QuoteExportInput): Promise<void> {
   const workbook = new ExcelJS.Workbook()
   workbook.creator = "Tijerales Estructuras & Eventos"
@@ -77,12 +94,13 @@ export async function downloadQuoteXlsx(data: QuoteExportInput): Promise<void> {
     { key: "I", width: 20 }, // Valor
   ]
 
-  // Set row heights for rows 1 to 6
-  for (let r = 1; r <= 6; r++) {
-    worksheet.getRow(r).height = 18
+  // Set row heights for rows 1 to 5
+  for (let r = 1; r <= 5; r++) {
+    worksheet.getRow(r).height = 24
   }
+  worksheet.getRow(6).height = 14
 
-  // 1. ENCABEZADO FIJO (Filas 1 a 6: Logo)
+  // 1. ENCABEZADO FIJO (Filas 1 a 5: Logo ocupando exactamente Col B a H y Filas 1 a 5)
   try {
     const logoImageId = workbook.addImage({
       base64: TIJERALES_LOGO_BASE64,
@@ -90,8 +108,9 @@ export async function downloadQuoteXlsx(data: QuoteExportInput): Promise<void> {
     })
 
     worksheet.addImage(logoImageId, {
-      tl: { col: 3.8, row: 0.8 },
-      ext: { width: 180, height: 80 },
+      tl: { col: 1, row: 0 },
+      br: { col: 8, row: 5 },
+      editAs: "oneCell",
     })
   } catch (e) {
     console.warn("Could not insert logo image:", e)
@@ -115,10 +134,21 @@ export async function downloadQuoteXlsx(data: QuoteExportInput): Promise<void> {
   applyBorders(worksheet, 8, 8, 2, 8)
   worksheet.getRow(8).height = 20
 
-  // Filas 9 a 11: Espaciado
-  worksheet.getRow(9).height = 12
-  worksheet.getRow(10).height = 12
-  worksheet.getRow(11).height = 12
+  // Filas 9 y 10: Celdas combinadas de B a H con bordes completos en blanco
+  worksheet.mergeCells("B9:H9")
+  const row9Cell = worksheet.getCell("B9")
+  row9Cell.value = ""
+  applyBorders(worksheet, 9, 9, 2, 8)
+  worksheet.getRow(9).height = 20
+
+  worksheet.mergeCells("B10:H10")
+  const row10Cell = worksheet.getCell("B10")
+  row10Cell.value = ""
+  applyBorders(worksheet, 10, 10, 2, 8)
+  worksheet.getRow(10).height = 20
+
+  // Fila 11: Espaciado
+  worksheet.getRow(11).height = 14
 
   // 2. TABLA DINÁMICA DE SERVICIOS
   // Fila 12 (Cabeceras de tabla)
@@ -231,12 +261,12 @@ export async function downloadQuoteXlsx(data: QuoteExportInput): Promise<void> {
     const row = worksheet.getRow(currentRow)
     row.height = 20
 
-    // Col C:H combinadas para el texto del total
+    // Col C:H combinadas para el texto del total (centrado y en negrita)
     worksheet.mergeCells(`C${currentRow}:H${currentRow}`)
     const labelCell = worksheet.getCell(`C${currentRow}`)
     labelCell.value = tot.label
     labelCell.font = { name: "Arial", size: 10, bold: true }
-    labelCell.alignment = { horizontal: "right", vertical: "middle" }
+    labelCell.alignment = { horizontal: "center", vertical: "middle" }
     applyBorders(worksheet, currentRow, currentRow, 3, 8)
 
     // Col I para el monto con formato Moneda
@@ -254,6 +284,12 @@ export async function downloadQuoteXlsx(data: QuoteExportInput): Promise<void> {
   // Deja 2 filas en blanco
   currentRow += 2
 
+  const headerFill: ExcelJS.Fill = {
+    type: "pattern",
+    pattern: "solid",
+    fgColor: { argb: "FFD9D9D9" },
+  }
+
   // Tabla: DATOS ORDEN DE COMPRA
   const ocRows = [
     { label: "Razón Social", value: "Angélica Andrea Soto Lazo" },
@@ -262,12 +298,13 @@ export async function downloadQuoteXlsx(data: QuoteExportInput): Promise<void> {
     { label: "Giro", value: "Eventos / Banquetería" },
   ]
 
-  // Header tabla OC
+  // Header tabla OC (Fondo gris claro, centrado, negrita, con bordes)
   worksheet.mergeCells(`C${currentRow}:H${currentRow}`)
   const ocHeaderCell = worksheet.getCell(`C${currentRow}`)
   ocHeaderCell.value = "DATOS ORDEN DE COMPRA"
   ocHeaderCell.font = { name: "Arial", size: 10, bold: true }
   ocHeaderCell.alignment = { horizontal: "center", vertical: "middle" }
+  applyFill(worksheet, currentRow, currentRow, 3, 8, headerFill)
   applyBorders(worksheet, currentRow, currentRow, 3, 8)
   worksheet.getRow(currentRow).height = 20
   currentRow++
@@ -307,12 +344,13 @@ export async function downloadQuoteXlsx(data: QuoteExportInput): Promise<void> {
     { label: "Mail de Confirmación", value: "info@tijerales.cl" },
   ]
 
-  // Header tabla Transferencia
+  // Header tabla Transferencia (Fondo gris claro, centrado, negrita, con bordes)
   worksheet.mergeCells(`C${currentRow}:H${currentRow}`)
   const transHeaderCell = worksheet.getCell(`C${currentRow}`)
   transHeaderCell.value = "DATOS DE TRANSFERENCIA"
   transHeaderCell.font = { name: "Arial", size: 10, bold: true }
   transHeaderCell.alignment = { horizontal: "center", vertical: "middle" }
+  applyFill(worksheet, currentRow, currentRow, 3, 8, headerFill)
   applyBorders(worksheet, currentRow, currentRow, 3, 8)
   worksheet.getRow(currentRow).height = 20
   currentRow++
