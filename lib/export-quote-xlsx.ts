@@ -9,11 +9,13 @@ export type QuoteExportInput = {
   ocData: string
   discount: string
   isPercent: boolean
+  isDiscountActive?: boolean
   observations: string
   quantities: Record<string, number>
   net: number
   iva: number
   discountValue: number
+  netWithDiscount?: number
   finalTotal: number
 }
 
@@ -245,21 +247,31 @@ export async function downloadQuoteXlsx(data: QuoteExportInput): Promise<void> {
   }
 
   // 3. SECCIÓN DE TOTALES (Inmediatamente debajo del último servicio)
-  const totalsData = [
-    { label: "Total Neto", value: data.net },
-    { label: "Descuento", value: data.discountValue },
-    { label: "IVA", value: data.iva },
-    { label: "Total final Cotización", value: data.finalTotal },
-  ]
+  const isDiscountActive = data.isDiscountActive ?? false
+  const netWithDiscount = data.netWithDiscount ?? Math.max(0, data.net - data.discountValue)
+
+  const totalsData = isDiscountActive
+    ? [
+        { label: "Total Neto", value: data.net },
+        { label: "Descuento", value: data.discountValue },
+        { label: "Total con descuento", value: netWithDiscount },
+        { label: "IVA", value: data.iva },
+        { label: "Total final Cotización", value: data.finalTotal },
+      ]
+    : [
+        { label: "Total Neto", value: data.net },
+        { label: "IVA", value: data.iva },
+        { label: "Total final Cotización", value: data.finalTotal },
+      ]
 
   totalsData.forEach((tot) => {
-    // Col B:G combinadas para el texto del total (centrado y en negrita)
-    worksheet.mergeCells(`B${currentRow}:G${currentRow}`)
-    const labelCell = worksheet.getCell(`B${currentRow}`)
+    // Col A:G combinadas para el texto del total (centrado y en negrita)
+    worksheet.mergeCells(`A${currentRow}:G${currentRow}`)
+    const labelCell = worksheet.getCell(`A${currentRow}`)
     labelCell.value = tot.label
     labelCell.font = { name: "Arial", size: 11, bold: true }
     labelCell.alignment = { horizontal: "center", vertical: "middle" }
-    applyBorders(worksheet, currentRow, currentRow, 2, 7)
+    applyBorders(worksheet, currentRow, currentRow, 1, 7)
 
     // Col H para el monto con formato Moneda
     const valCell = worksheet.getCell(`H${currentRow}`)
@@ -271,6 +283,19 @@ export async function downloadQuoteXlsx(data: QuoteExportInput): Promise<void> {
 
     currentRow++
   })
+
+  // Recuadro en blanco para anotaciones (2 filas combinadas de A a H con bordes)
+  worksheet.mergeCells(`A${currentRow}:H${currentRow}`)
+  const notesRow1 = worksheet.getCell(`A${currentRow}`)
+  notesRow1.value = ""
+  applyBorders(worksheet, currentRow, currentRow, 1, 8)
+  currentRow++
+
+  worksheet.mergeCells(`A${currentRow}:H${currentRow}`)
+  const notesRow2 = worksheet.getCell(`A${currentRow}`)
+  notesRow2.value = ""
+  applyBorders(worksheet, currentRow, currentRow, 1, 8)
+  currentRow++
 
   // 4. PIE DE PÁGINA FIJO (Tablas de pago)
   // Deja 2 filas en blanco

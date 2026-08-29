@@ -7,12 +7,23 @@ type SummaryPanelProps = {
   net: number
   iva: number
   discountValue: number
+  netWithDiscount: number
   finalTotal: number
+  isDiscountActive: boolean
   onClear: () => void
   onGenerate: () => void
 }
 
-export function SummaryPanel({ net, iva, discountValue, finalTotal, onClear, onGenerate }: SummaryPanelProps) {
+export function SummaryPanel({
+  net,
+  iva,
+  discountValue,
+  netWithDiscount,
+  finalTotal,
+  isDiscountActive,
+  onClear,
+  onGenerate,
+}: SummaryPanelProps) {
   return (
     <div className="flex flex-col gap-5">
       {/* RESUMEN DE COTIZACIÓN */}
@@ -20,20 +31,42 @@ export function SummaryPanel({ net, iva, discountValue, finalTotal, onClear, onG
         <header className="rounded-t-xl bg-brand-navy px-4 py-3">
           <h2 className="text-base font-bold tracking-wide text-white">RESUMEN DE COTIZACIÓN</h2>
         </header>
-        <div className="flex flex-col gap-4 p-4">
+        <div className="flex flex-col gap-3.5 p-4">
+          {/* TOTAL NETO */}
           <Row label="TOTAL NETO" value={formatCLP(net)} labelClass="text-brand-navy" />
-          <div className="h-px bg-panel-line" />
-          <Row label="IVA (19%)" value={formatCLP(iva)} labelClass="text-muted-foreground" />
-          <div className="h-px bg-panel-line" />
-          <Row
-            label="DESCUENTO"
-            value={formatCLP(-discountValue)}
-            labelClass="text-quote-green"
-            valueClass="text-quote-green"
-          />
+
+          {isDiscountActive ? (
+            <>
+              <div className="h-px bg-panel-line" />
+              {/* DESCUENTO */}
+              <Row
+                label="DESCUENTO"
+                value={formatCLP(-discountValue)}
+                labelClass="text-quote-green"
+                valueClass="text-quote-green"
+              />
+              <div className="h-px bg-panel-line" />
+              {/* TOTAL CON DESCUENTO */}
+              <Row
+                label="TOTAL CON DESCUENTO"
+                value={formatCLP(netWithDiscount)}
+                labelClass="text-brand-navy"
+              />
+              <div className="h-px bg-panel-line" />
+              {/* IVA (19%) sobre el total con descuento */}
+              <Row label="IVA (19%)" value={formatCLP(iva)} labelClass="text-muted-foreground" />
+            </>
+          ) : (
+            <>
+              <div className="h-px bg-panel-line" />
+              {/* IVA (19%) sobre el neto directo */}
+              <Row label="IVA (19%)" value={formatCLP(iva)} labelClass="text-muted-foreground" />
+            </>
+          )}
+
           <div className="h-px bg-panel-line" />
 
-          <div className="flex items-center justify-between rounded-lg bg-brand-navy px-4 py-3.5 text-white">
+          <div className="flex items-center justify-between rounded-lg bg-brand-navy px-4 py-3.5 text-white shadow-inner">
             <span className="text-lg font-extrabold tracking-wide">TOTAL FINAL</span>
             <span className="text-2xl font-extrabold">{formatCLP(finalTotal)}</span>
           </div>

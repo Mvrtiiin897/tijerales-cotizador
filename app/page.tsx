@@ -40,6 +40,7 @@ export default function Page() {
   const [ocData, setOcData] = useState("")
   const [discount, setDiscount] = useState("0")
   const [isPercent, setIsPercent] = useState(false)
+  const [isDiscountActive, setIsDiscountActive] = useState(false)
   const [observations, setObservations] = useState("")
 
   const sectionRefs = useRef<Record<string, HTMLDivElement | null>>({})
@@ -66,19 +67,28 @@ export default function Page() {
     if (el) el.scrollIntoView({ behavior: "smooth", block: "start" })
   }
 
-  const { net, iva, discountValue, finalTotal } = useMemo(() => {
+  const { net, discountValue, netWithDiscount, iva, finalTotal } = useMemo(() => {
     const net = productCategories.reduce((sum, cat) => {
       return sum + cat.items.reduce((s, item) => s + (quantities[item.id] ?? 0) * item.price, 0)
     }, 0)
-    const iva = net * IVA_RATE
-    const gross = net + iva
-    const rawDiscount = Number.parseFloat(discount)
-    const discNum = Number.isNaN(rawDiscount) ? 0 : Math.max(0, rawDiscount)
-    const rawValue = isPercent ? net * (discNum / 100) : discNum
-    const discountValue = Math.min(Math.max(0, rawValue), gross)
-    const finalTotal = gross - discountValue
-    return { net, iva, discountValue, finalTotal }
-  }, [quantities, discount, isPercent, productCategories])
+
+    if (isDiscountActive) {
+      const rawDiscount = Number.parseFloat(discount)
+      const discNum = Number.isNaN(rawDiscount) ? 0 : Math.max(0, rawDiscount)
+      const rawValue = isPercent ? net * (discNum / 100) : discNum
+      const discountValue = Math.min(Math.max(0, rawValue), net)
+      const netWithDiscount = Math.max(0, net - discountValue)
+      const iva = netWithDiscount * IVA_RATE
+      const finalTotal = netWithDiscount + iva
+      return { net, discountValue, netWithDiscount, iva, finalTotal }
+    } else {
+      const discountValue = 0
+      const netWithDiscount = net
+      const iva = net * IVA_RATE
+      const finalTotal = net + iva
+      return { net, discountValue, netWithDiscount, iva, finalTotal }
+    }
+  }, [quantities, discount, isPercent, isDiscountActive, productCategories])
 
   const handleClear = () => {
     setQuantities({})
@@ -86,6 +96,7 @@ export default function Page() {
     setOcData("")
     setDiscount("0")
     setIsPercent(false)
+    setIsDiscountActive(false)
     setObservations("")
   }
 
@@ -97,11 +108,13 @@ export default function Page() {
       ocData,
       discount,
       isPercent,
+      isDiscountActive,
       observations,
       quantities,
       net,
       iva,
       discountValue,
+      netWithDiscount,
       finalTotal,
     })
     setActiveTab("resumen")
@@ -196,6 +209,8 @@ export default function Page() {
                 setDiscount={setDiscount}
                 isPercent={isPercent}
                 setIsPercent={setIsPercent}
+                isDiscountActive={isDiscountActive}
+                setIsDiscountActive={setIsDiscountActive}
                 observations={observations}
                 setObservations={setObservations}
               />
@@ -234,7 +249,9 @@ export default function Page() {
                   net={net}
                   iva={iva}
                   discountValue={discountValue}
+                  netWithDiscount={netWithDiscount}
                   finalTotal={finalTotal}
+                  isDiscountActive={isDiscountActive}
                   onClear={handleClear}
                   onGenerate={handleGenerate}
                 />
