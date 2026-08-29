@@ -86,36 +86,29 @@ export async function downloadQuoteXlsx(data: QuoteExportInput): Promise<void> {
       fitToWidth: 1,
       fitToHeight: 0,
       margins: {
-        left: 0.25,
-        right: 0.25,
-        top: 0.75,
-        bottom: 0.75,
-        header: 0.3,
-        footer: 0.3,
+        left: 0.1,
+        right: 0.1,
+        top: 0.4,
+        bottom: 0.4,
+        header: 0.1,
+        footer: 0.1,
       },
     },
   })
 
-  // Set column widths (ajustados para calzar perfectamente en 1 página Carta)
+  // Set column widths (ancho estándar de Excel 10.71 para A-G y 15 para H)
   worksheet.columns = [
-    { key: "A", width: 2 }, // Margen / Padding
-    { key: "B", width: 10 }, // Cantidad
-    { key: "C", width: 11 }, // Servicio (parte de C:H combinadas = 66 de ancho)
-    { key: "D", width: 11 },
-    { key: "E", width: 11 },
-    { key: "F", width: 11 },
-    { key: "G", width: 11 },
-    { key: "H", width: 11 },
-    { key: "I", width: 15 }, // Valor
+    { key: "A", width: 10.71 }, // Cantidad
+    { key: "B", width: 10.71 }, // Servicio (B a G combinadas)
+    { key: "C", width: 10.71 },
+    { key: "D", width: 10.71 },
+    { key: "E", width: 10.71 },
+    { key: "F", width: 10.71 },
+    { key: "G", width: 10.71 },
+    { key: "H", width: 15 }, // Valor
   ]
 
-  // Set row heights for rows 1 to 5
-  for (let r = 1; r <= 5; r++) {
-    worksheet.getRow(r).height = 24
-  }
-  worksheet.getRow(6).height = 14
-
-  // 1. ENCABEZADO FIJO (Filas 1 a 5: Logo ocupando exactamente Col B a H y Filas 1 a 5)
+  // 1. ENCABEZADO FIJO (Filas 1 a 5: Logo ocupando columnas A a H)
   try {
     const logoImageId = workbook.addImage({
       base64: TIJERALES_LOGO_BASE64,
@@ -123,7 +116,7 @@ export async function downloadQuoteXlsx(data: QuoteExportInput): Promise<void> {
     })
 
     worksheet.addImage(logoImageId, {
-      tl: { col: 1, row: 0 },
+      tl: { col: 0, row: 0 },
       br: { col: 8, row: 5 },
       editAs: "oneCell",
     })
@@ -132,62 +125,52 @@ export async function downloadQuoteXlsx(data: QuoteExportInput): Promise<void> {
   }
 
   // Fila 7: Título "Desglose Formal Servicios Tijerales 2026"
-  worksheet.mergeCells("B7:H7")
-  const titleCell = worksheet.getCell("B7")
+  worksheet.mergeCells("A7:H7")
+  const titleCell = worksheet.getCell("A7")
   titleCell.value = "Desglose Formal Servicios Tijerales 2026"
-  titleCell.font = { name: "Arial", size: 12, bold: true, color: { argb: "FF000000" } }
+  titleCell.font = { name: "Arial", size: 11, bold: true, color: { argb: "FF000000" } }
   titleCell.alignment = { horizontal: "center", vertical: "middle" }
-  applyBorders(worksheet, 7, 7, 2, 8)
-  worksheet.getRow(7).height = 24
+  applyBorders(worksheet, 7, 7, 1, 8)
 
   // Fila 8: Subtítulo "Datos OC/Banco tranferencia"
-  worksheet.mergeCells("B8:H8")
-  const subtitleCell = worksheet.getCell("B8")
+  worksheet.mergeCells("A8:H8")
+  const subtitleCell = worksheet.getCell("A8")
   subtitleCell.value = "Datos OC/Banco tranferencia"
-  subtitleCell.font = { name: "Arial", size: 10, bold: false, color: { argb: "FF000000" } }
+  subtitleCell.font = { name: "Arial", size: 11, bold: false, color: { argb: "FF000000" } }
   subtitleCell.alignment = { horizontal: "center", vertical: "middle" }
-  applyBorders(worksheet, 8, 8, 2, 8)
-  worksheet.getRow(8).height = 20
+  applyBorders(worksheet, 8, 8, 1, 8)
 
-  // Filas 9 y 10: Celdas combinadas de B a H con bordes completos en blanco
-  worksheet.mergeCells("B9:H9")
-  const row9Cell = worksheet.getCell("B9")
+  // Filas 9 y 10: Celdas combinadas de A a H con bordes completos en blanco
+  worksheet.mergeCells("A9:H9")
+  const row9Cell = worksheet.getCell("A9")
   row9Cell.value = ""
-  applyBorders(worksheet, 9, 9, 2, 8)
-  worksheet.getRow(9).height = 20
+  applyBorders(worksheet, 9, 9, 1, 8)
 
-  worksheet.mergeCells("B10:H10")
-  const row10Cell = worksheet.getCell("B10")
+  worksheet.mergeCells("A10:H10")
+  const row10Cell = worksheet.getCell("A10")
   row10Cell.value = ""
-  applyBorders(worksheet, 10, 10, 2, 8)
-  worksheet.getRow(10).height = 20
-
-  // Fila 11: Espaciado
-  worksheet.getRow(11).height = 14
+  applyBorders(worksheet, 10, 10, 1, 8)
 
   // 2. TABLA DINÁMICA DE SERVICIOS
   // Fila 12 (Cabeceras de tabla)
-  const headerRow = worksheet.getRow(12)
-  headerRow.height = 22
+  const colACell = worksheet.getCell("A12")
+  colACell.value = "Cantidad"
+  colACell.font = { name: "Arial", size: 11, bold: true }
+  colACell.alignment = { horizontal: "center", vertical: "middle" }
+  applyBorders(worksheet, 12, 12, 1, 1)
 
-  const colBCell = worksheet.getCell("B12")
-  colBCell.value = "Cantidad"
-  colBCell.font = { name: "Arial", size: 10, bold: true }
-  colBCell.alignment = { horizontal: "center", vertical: "middle" }
-  applyBorders(worksheet, 12, 12, 2, 2)
+  worksheet.mergeCells("B12:G12")
+  const colBGCell = worksheet.getCell("B12")
+  colBGCell.value = "Servicio"
+  colBGCell.font = { name: "Arial", size: 11, bold: true }
+  colBGCell.alignment = { horizontal: "center", vertical: "middle" }
+  applyBorders(worksheet, 12, 12, 2, 7)
 
-  worksheet.mergeCells("C12:H12")
-  const colCHCell = worksheet.getCell("C12")
-  colCHCell.value = "Servicio"
-  colCHCell.font = { name: "Arial", size: 10, bold: true }
-  colCHCell.alignment = { horizontal: "center", vertical: "middle" }
-  applyBorders(worksheet, 12, 12, 3, 8)
-
-  const colICell = worksheet.getCell("I12")
-  colICell.value = "Valor"
-  colICell.font = { name: "Arial", size: 10, bold: true }
-  colICell.alignment = { horizontal: "center", vertical: "middle" }
-  applyBorders(worksheet, 12, 12, 9, 9)
+  const colHCell = worksheet.getCell("H12")
+  colHCell.value = "Valor"
+  colHCell.font = { name: "Arial", size: 11, bold: true }
+  colHCell.alignment = { horizontal: "center", vertical: "middle" }
+  applyBorders(worksheet, 12, 12, 8, 8)
 
   // Filtrar ÚNICAMENTE los servicios seleccionados (cantidad > 0)
   const sourceCategories = data.categories || CATEGORIES
@@ -213,52 +196,49 @@ export async function downloadQuoteXlsx(data: QuoteExportInput): Promise<void> {
 
   if (selectedItems.length === 0) {
     // Fila vacía informativa si no se seleccionó ningún ítem
-    const row = worksheet.getRow(currentRow)
-    row.height = 20
-    worksheet.getCell(`B${currentRow}`).value = 0
-    worksheet.getCell(`B${currentRow}`).alignment = { horizontal: "center", vertical: "middle" }
-    applyBorders(worksheet, currentRow, currentRow, 2, 2)
+    worksheet.getCell(`A${currentRow}`).value = 0
+    worksheet.getCell(`A${currentRow}`).font = { name: "Arial", size: 11 }
+    worksheet.getCell(`A${currentRow}`).alignment = { horizontal: "center", vertical: "middle" }
+    applyBorders(worksheet, currentRow, currentRow, 1, 1)
 
-    worksheet.mergeCells(`C${currentRow}:H${currentRow}`)
-    const emptyCell = worksheet.getCell(`C${currentRow}`)
+    worksheet.mergeCells(`B${currentRow}:G${currentRow}`)
+    const emptyCell = worksheet.getCell(`B${currentRow}`)
     emptyCell.value = "Sin servicios seleccionados"
-    emptyCell.font = { name: "Arial", size: 10, italic: true }
+    emptyCell.font = { name: "Arial", size: 11, italic: true }
     emptyCell.alignment = { horizontal: "center", vertical: "middle" }
-    applyBorders(worksheet, currentRow, currentRow, 3, 8)
+    applyBorders(worksheet, currentRow, currentRow, 2, 7)
 
-    const valCell = worksheet.getCell(`I${currentRow}`)
+    const valCell = worksheet.getCell(`H${currentRow}`)
     valCell.value = 0
+    valCell.font = { name: "Arial", size: 11 }
     valCell.numFmt = '"$"#,##0'
     valCell.alignment = { horizontal: "right", vertical: "middle" }
-    applyBorders(worksheet, currentRow, currentRow, 9, 9)
+    applyBorders(worksheet, currentRow, currentRow, 8, 8)
     currentRow++
   } else {
     selectedItems.forEach((item) => {
-      const row = worksheet.getRow(currentRow)
-      row.height = 20
-
-      // Col B: Cantidad
-      const qtyCell = worksheet.getCell(`B${currentRow}`)
+      // Col A: Cantidad
+      const qtyCell = worksheet.getCell(`A${currentRow}`)
       qtyCell.value = item.qty
-      qtyCell.font = { name: "Arial", size: 10 }
+      qtyCell.font = { name: "Arial", size: 11 }
       qtyCell.alignment = { horizontal: "center", vertical: "middle" }
-      applyBorders(worksheet, currentRow, currentRow, 2, 2)
+      applyBorders(worksheet, currentRow, currentRow, 1, 1)
 
-      // Col C:H (combinadas): Nombre del servicio
-      worksheet.mergeCells(`C${currentRow}:H${currentRow}`)
-      const nameCell = worksheet.getCell(`C${currentRow}`)
+      // Col B:G (combinadas): Nombre del servicio
+      worksheet.mergeCells(`B${currentRow}:G${currentRow}`)
+      const nameCell = worksheet.getCell(`B${currentRow}`)
       nameCell.value = item.name
-      nameCell.font = { name: "Arial", size: 10 }
+      nameCell.font = { name: "Arial", size: 11 }
       nameCell.alignment = { horizontal: "left", vertical: "middle", indent: 1 }
-      applyBorders(worksheet, currentRow, currentRow, 3, 8)
+      applyBorders(worksheet, currentRow, currentRow, 2, 7)
 
-      // Col I: Valor (Total por ese servicio)
-      const valCell = worksheet.getCell(`I${currentRow}`)
+      // Col H: Valor (Total por ese servicio)
+      const valCell = worksheet.getCell(`H${currentRow}`)
       valCell.value = item.total
-      valCell.font = { name: "Arial", size: 10 }
+      valCell.font = { name: "Arial", size: 11 }
       valCell.numFmt = '"$"#,##0'
       valCell.alignment = { horizontal: "right", vertical: "middle" }
-      applyBorders(worksheet, currentRow, currentRow, 9, 9)
+      applyBorders(worksheet, currentRow, currentRow, 8, 8)
 
       currentRow++
     })
@@ -273,24 +253,21 @@ export async function downloadQuoteXlsx(data: QuoteExportInput): Promise<void> {
   ]
 
   totalsData.forEach((tot) => {
-    const row = worksheet.getRow(currentRow)
-    row.height = 20
-
-    // Col C:H combinadas para el texto del total (centrado y en negrita)
-    worksheet.mergeCells(`C${currentRow}:H${currentRow}`)
-    const labelCell = worksheet.getCell(`C${currentRow}`)
+    // Col B:G combinadas para el texto del total (centrado y en negrita)
+    worksheet.mergeCells(`B${currentRow}:G${currentRow}`)
+    const labelCell = worksheet.getCell(`B${currentRow}`)
     labelCell.value = tot.label
-    labelCell.font = { name: "Arial", size: 10, bold: true }
+    labelCell.font = { name: "Arial", size: 11, bold: true }
     labelCell.alignment = { horizontal: "center", vertical: "middle" }
-    applyBorders(worksheet, currentRow, currentRow, 3, 8)
+    applyBorders(worksheet, currentRow, currentRow, 2, 7)
 
-    // Col I para el monto con formato Moneda
-    const valCell = worksheet.getCell(`I${currentRow}`)
+    // Col H para el monto con formato Moneda
+    const valCell = worksheet.getCell(`H${currentRow}`)
     valCell.value = tot.value
-    valCell.font = { name: "Arial", size: 10, bold: true }
+    valCell.font = { name: "Arial", size: 11, bold: true }
     valCell.numFmt = '"$"#,##0'
     valCell.alignment = { horizontal: "right", vertical: "middle" }
-    applyBorders(worksheet, currentRow, currentRow, 9, 9)
+    applyBorders(worksheet, currentRow, currentRow, 8, 8)
 
     currentRow++
   })
@@ -314,35 +291,31 @@ export async function downloadQuoteXlsx(data: QuoteExportInput): Promise<void> {
   ]
 
   // Header tabla OC (Fondo gris claro, centrado, negrita, con bordes)
-  worksheet.mergeCells(`C${currentRow}:H${currentRow}`)
-  const ocHeaderCell = worksheet.getCell(`C${currentRow}`)
+  worksheet.mergeCells(`B${currentRow}:G${currentRow}`)
+  const ocHeaderCell = worksheet.getCell(`B${currentRow}`)
   ocHeaderCell.value = "DATOS ORDEN DE COMPRA"
-  ocHeaderCell.font = { name: "Arial", size: 10, bold: true }
+  ocHeaderCell.font = { name: "Arial", size: 11, bold: true }
   ocHeaderCell.alignment = { horizontal: "center", vertical: "middle" }
-  applyFill(worksheet, currentRow, currentRow, 3, 8, headerFill)
-  applyBorders(worksheet, currentRow, currentRow, 3, 8)
-  worksheet.getRow(currentRow).height = 20
+  applyFill(worksheet, currentRow, currentRow, 2, 7, headerFill)
+  applyBorders(worksheet, currentRow, currentRow, 2, 7)
   currentRow++
 
   ocRows.forEach((item) => {
-    const row = worksheet.getRow(currentRow)
-    row.height = 19
-
-    // Col C a E para la etiqueta
-    worksheet.mergeCells(`C${currentRow}:E${currentRow}`)
-    const labelCell = worksheet.getCell(`C${currentRow}`)
+    // Col B a D para la etiqueta
+    worksheet.mergeCells(`B${currentRow}:D${currentRow}`)
+    const labelCell = worksheet.getCell(`B${currentRow}`)
     labelCell.value = item.label
-    labelCell.font = { name: "Arial", size: 10, bold: true }
+    labelCell.font = { name: "Arial", size: 11, bold: true }
     labelCell.alignment = { horizontal: "left", vertical: "middle", indent: 1 }
-    applyBorders(worksheet, currentRow, currentRow, 3, 5)
+    applyBorders(worksheet, currentRow, currentRow, 2, 4)
 
-    // Col F a H para el valor
-    worksheet.mergeCells(`F${currentRow}:H${currentRow}`)
-    const valCell = worksheet.getCell(`F${currentRow}`)
+    // Col E a G para el valor
+    worksheet.mergeCells(`E${currentRow}:G${currentRow}`)
+    const valCell = worksheet.getCell(`E${currentRow}`)
     valCell.value = item.value
-    valCell.font = { name: "Arial", size: 10 }
+    valCell.font = { name: "Arial", size: 11 }
     valCell.alignment = { horizontal: "left", vertical: "middle", indent: 1 }
-    applyBorders(worksheet, currentRow, currentRow, 6, 8)
+    applyBorders(worksheet, currentRow, currentRow, 5, 7)
 
     currentRow++
   })
@@ -360,35 +333,31 @@ export async function downloadQuoteXlsx(data: QuoteExportInput): Promise<void> {
   ]
 
   // Header tabla Transferencia (Fondo gris claro, centrado, negrita, con bordes)
-  worksheet.mergeCells(`C${currentRow}:H${currentRow}`)
-  const transHeaderCell = worksheet.getCell(`C${currentRow}`)
+  worksheet.mergeCells(`B${currentRow}:G${currentRow}`)
+  const transHeaderCell = worksheet.getCell(`B${currentRow}`)
   transHeaderCell.value = "DATOS DE TRANSFERENCIA"
-  transHeaderCell.font = { name: "Arial", size: 10, bold: true }
+  transHeaderCell.font = { name: "Arial", size: 11, bold: true }
   transHeaderCell.alignment = { horizontal: "center", vertical: "middle" }
-  applyFill(worksheet, currentRow, currentRow, 3, 8, headerFill)
-  applyBorders(worksheet, currentRow, currentRow, 3, 8)
-  worksheet.getRow(currentRow).height = 20
+  applyFill(worksheet, currentRow, currentRow, 2, 7, headerFill)
+  applyBorders(worksheet, currentRow, currentRow, 2, 7)
   currentRow++
 
   transferRows.forEach((item) => {
-    const row = worksheet.getRow(currentRow)
-    row.height = 19
-
-    // Col C a E para la etiqueta
-    worksheet.mergeCells(`C${currentRow}:E${currentRow}`)
-    const labelCell = worksheet.getCell(`C${currentRow}`)
+    // Col B a D para la etiqueta
+    worksheet.mergeCells(`B${currentRow}:D${currentRow}`)
+    const labelCell = worksheet.getCell(`B${currentRow}`)
     labelCell.value = item.label
-    labelCell.font = { name: "Arial", size: 10, bold: true }
+    labelCell.font = { name: "Arial", size: 11, bold: true }
     labelCell.alignment = { horizontal: "left", vertical: "middle", indent: 1 }
-    applyBorders(worksheet, currentRow, currentRow, 3, 5)
+    applyBorders(worksheet, currentRow, currentRow, 2, 4)
 
-    // Col F a H para el valor
-    worksheet.mergeCells(`F${currentRow}:H${currentRow}`)
-    const valCell = worksheet.getCell(`F${currentRow}`)
+    // Col E a G para el valor
+    worksheet.mergeCells(`E${currentRow}:G${currentRow}`)
+    const valCell = worksheet.getCell(`E${currentRow}`)
     valCell.value = item.value
-    valCell.font = { name: "Arial", size: 10 }
+    valCell.font = { name: "Arial", size: 11 }
     valCell.alignment = { horizontal: "left", vertical: "middle", indent: 1 }
-    applyBorders(worksheet, currentRow, currentRow, 6, 8)
+    applyBorders(worksheet, currentRow, currentRow, 5, 7)
 
     currentRow++
   })
