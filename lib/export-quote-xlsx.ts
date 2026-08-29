@@ -79,19 +79,34 @@ export async function downloadQuoteXlsx(data: QuoteExportInput): Promise<void> {
 
   const worksheet = workbook.addWorksheet("Cotización", {
     views: [{ showGridLines: true }],
+    pageSetup: {
+      paperSize: 1, // 1 = Carta (Letter)
+      orientation: "portrait",
+      fitToPage: true,
+      fitToWidth: 1,
+      fitToHeight: 0,
+      margins: {
+        left: 0.25,
+        right: 0.25,
+        top: 0.75,
+        bottom: 0.75,
+        header: 0.3,
+        footer: 0.3,
+      },
+    },
   })
 
-  // Set column widths
+  // Set column widths (ajustados para calzar perfectamente en 1 página Carta)
   worksheet.columns = [
-    { key: "A", width: 4 }, // Padding column
-    { key: "B", width: 14 }, // Cantidad
-    { key: "C", width: 14 }, // Servicio (part of C:H)
-    { key: "D", width: 14 },
-    { key: "E", width: 14 },
-    { key: "F", width: 14 },
-    { key: "G", width: 14 },
-    { key: "H", width: 14 },
-    { key: "I", width: 20 }, // Valor
+    { key: "A", width: 2 }, // Margen / Padding
+    { key: "B", width: 10 }, // Cantidad
+    { key: "C", width: 11 }, // Servicio (parte de C:H combinadas = 66 de ancho)
+    { key: "D", width: 11 },
+    { key: "E", width: 11 },
+    { key: "F", width: 11 },
+    { key: "G", width: 11 },
+    { key: "H", width: 11 },
+    { key: "I", width: 15 }, // Valor
   ]
 
   // Set row heights for rows 1 to 5
